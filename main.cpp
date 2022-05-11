@@ -460,6 +460,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 	//描画初期化処理ここまで
 
+
+	float num = 0.005f;
 	//ゲームループ---------------
 	while (1) {
 
@@ -561,18 +563,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		commandList->DrawInstanced(_countof(vertices), 1, 0, 0); // 全ての頂点を使って描画
 
-		if (constMapMaterial->color.x>=1) {
-			constMapMaterial->color.x = 0;
+
+		if (constMapMaterial->color.x >= 1) {
+			num *= -1;
 		}
-		else {
-		constMapMaterial->color.x += 0.005f;
+		else if (constMapMaterial->color.x <= 0) {
+			num *= -1;
 		}
-		if (constMapMaterial->color.z <= 0) {
-			constMapMaterial->color.z = 1;
-		}
-		else {
-			constMapMaterial->color.z -= 0.005f;
-		}
+			constMapMaterial->color.x += num/2;
+			constMapMaterial->color.z -= num/2;
+			constMapMaterial->color.y -= num/2;
 
 
 		//4.描画コマンドここまで
