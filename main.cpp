@@ -237,8 +237,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 頂点データ
 	XMFLOAT3 vertices[] = {
 	{ -0.5f, -0.5f, 0.0f }, // 左下
-	{ -0.5f, +0.5f, 0.0f }, // 左上
 	{ +0.5f, -0.5f, 0.0f }, // 右下
+	{ -0.5f, 0.0f, 0.0f },		// 左中
+	{ +0.5f, 0.0f, 0.0f },		// 右中
+	{ -0.5f, +0.5f, 0.0f }, // 左上
+	{ +0.5f, +0.5f, 0.0f }, // 右上
 	};
 	// 頂点データ全体のサイズ = 頂点データ一つ分のサイズ * 頂点データの要素数
 	UINT sizeVB = static_cast<UINT>(sizeof(XMFLOAT3) * _countof(vertices));
@@ -372,14 +375,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	blenddesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;    // 加算
 	blenddesc.SrcBlendAlpha = D3D12_BLEND_ONE;      // ソースの値を100% 使う
 	blenddesc.DestBlendAlpha = D3D12_BLEND_ZERO;    // デストの値を  0% 使う
-	// 減算合成
-	blenddesc.BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;    // デストからソースを減算
-	blenddesc.SrcBlend = D3D12_BLEND_ONE;               // ソースの値を100% 使う
-	blenddesc.DestBlend = D3D12_BLEND_ONE;              // デストの値を100% 使う
-	// 色反転
-	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;             // 加算
-	blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;    // 1.0f-デストカラーの値
-	blenddesc.DestBlend = D3D12_BLEND_ZERO;             // 使わない
+	
+	//// 減算合成
+	//blenddesc.BlendOp = D3D12_BLEND_OP_REV_SUBTRACT;    // デストからソースを減算
+	//blenddesc.SrcBlend = D3D12_BLEND_ONE;               // ソースの値を100% 使う
+	//blenddesc.DestBlend = D3D12_BLEND_ONE;              // デストの値を100% 使う
+	//// 色反転
+	//blenddesc.BlendOp = D3D12_BLEND_OP_ADD;             // 加算
+	//blenddesc.SrcBlend = D3D12_BLEND_INV_DEST_COLOR;    // 1.0f-デストカラーの値
+	//blenddesc.DestBlend = D3D12_BLEND_ZERO;             // 使わない
+	
 	// 半透明合成
 	blenddesc.BlendOp = D3D12_BLEND_OP_ADD;             // 加算
 	blenddesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;         // ソースのアルファ値
@@ -391,7 +396,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 図形の形状設定
 	pipelineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	// その他の設定
-	pipelineDesc.NumRenderTargets = 1; // 描画対象は1つ
+	pipelineDesc.NumRenderTargets =1; // 描画対象は1つ
 	pipelineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; // 0~255指定のRGBA
 	pipelineDesc.SampleDesc.Count = 1; // 1ピクセルにつき1回サンプリング
 
@@ -528,8 +533,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		D3D12_VIEWPORT viewport{};
 		viewport.Width = swapChainDesc.Width / 2;
 		viewport.Height = swapChainDesc.Height / 2;
-		viewport.TopLeftX = swapChainDesc.Width / 3;
-		viewport.TopLeftY = swapChainDesc.Height / 3;
+		viewport.TopLeftX = swapChainDesc.Width / 4;
+		viewport.TopLeftY = swapChainDesc.Height / 4;
 		viewport.MinDepth = 0.0f;
 		viewport.MaxDepth = 1.0f;
 
@@ -570,9 +575,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		else if (constMapMaterial->color.x <= 0) {
 			num *= -1;
 		}
-			constMapMaterial->color.x += num/2;
-			constMapMaterial->color.z -= num/2;
-			constMapMaterial->color.y -= num/2;
+		constMapMaterial->color.x += num / 2;
+		constMapMaterial->color.z -= num / 2;
+		constMapMaterial->color.y -= num / 2;
 
 
 		//4.描画コマンドここまで
