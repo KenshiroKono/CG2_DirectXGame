@@ -237,15 +237,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 頂点データ
 	XMFLOAT3 vertices[] = {
 	{ -0.5f, -0.5f, 0.0f }, // 左下　インデックス0
+	{ +0.5f, -0.5f, 0.0f }, // 右下　インデックス3
+	{ -0.5f, 0, 0.0f },		// 左中　インデックス2
+	{ +0.5f, 0, 0.0f },		// 右中　インデックス5
 	{ -0.5f, +0.5f, 0.0f }, // 左上　インデックス1
-	{ +0.5f, -0.5f, 0.0f }, // 右下　インデックス2
-	{ +0.5f, +0.5f, 0.0f }, // 右上　インデックス3
+	{ +0.5f, +0.5f, 0.0f }, // 右上　インデックス4
 	};
 	// インデックスデータ
 	uint16_t indices[] =
 	{
-		0, 1, 2, // 三角形1つ目
-		1, 2, 3, // 三角形2つ目
+		0, 1,
+		1, 2,
+		2, 3,
+		3, 4,
+		4, 5,
+		0, 3,
+		2, 5,
 	};
 
 
@@ -565,7 +572,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 		//3. 画面クリア(背景)
-		FLOAT clearColo[] = { 0.1f, 0.25f, 0.5f, 0.0f };//青っぽい色
+		FLOAT clearColo[] = { 0.01f, 0.01f, 0.01f, 0.0f };
 
 		if (key[DIK_SPACE]) {     // スペースキーが押されていたら
 
@@ -601,7 +608,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->SetGraphicsRootSignature(rootSignature);
 
 		// プリミティブ形状の設定コマンド
-		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); // 三角形リスト
+		commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST); //図形の設定ここ<---------
 
 		// 頂点バッファビューの設定コマンド
 		commandList->IASetVertexBuffers(0, 1, &vbView);
@@ -618,15 +625,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0); // 全ての頂点を使って描画
 
 
-		if (constMapMaterial->color.x >= 1) {
+		if (constMapMaterial->color.x >= 1|| constMapMaterial->color.x <= 0) {
 			num *= -1;
 		}
-		else if (constMapMaterial->color.x <= 0) {
-			num *= -1;
-		}
-		constMapMaterial->color.x += num / 2;
-		constMapMaterial->color.z -= num / 2;
-		constMapMaterial->color.y -= num / 2;
+		constMapMaterial->color.x += num / 0.32;
+		constMapMaterial->color.z -= num / 0.3;
+		constMapMaterial->color.y += num / 0.2;
 
 
 		//4.グラフィックスコマンドここまで
