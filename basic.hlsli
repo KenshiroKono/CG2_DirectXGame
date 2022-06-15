@@ -1,5 +1,6 @@
 cbuffer ConstBufferDataMaterial : register(b0) {
 	float4 color; // 色(RGBA)
+	float4 graColor; // 色(RGBA)
 };
 
 // 頂点シェーダーの出力構造体
