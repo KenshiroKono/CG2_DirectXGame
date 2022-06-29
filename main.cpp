@@ -255,10 +255,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 頂点データ
 	Vertex vertices[] = {
 		// x       y       z       u    v
-		{{-50.0f,-50.0f,300.0f}, {0.0f, 1.0f}}, // 左下
-		{{-50.0f, 50.0f,300.0f}, {0.0f, 0.0f}}, // 左上
-		{{ 50.0f,-50.0f,150.0f}, {1.0f, 1.0f}}, // 右下
-		{{ 50.0f, 50.0f,150.0f}, {1.0f, 0.0f}}, // 右上
+		{{-50.0f,-50.0f,0.0f}, {0.0f, 1.0f}}, // 左下
+		{{-50.0f, 50.0f,0.0f}, {0.0f, 0.0f}}, // 左上
+		{{ 50.0f,-50.0f,0.0f}, {1.0f, 1.0f}}, // 右下
+		{{ 50.0f, 50.0f,0.0f}, {1.0f, 0.0f}}, // 右上
 	};
 
 
@@ -447,7 +447,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	constMapTransform->mat.r[1].m128_f32[1] = -2.0f / win_H;
 	constMapTransform->mat.r[3].m128_f32[0] = -1.0f;
 	constMapTransform->mat.r[3].m128_f32[1] = 1.0f;
-	*/
 
 	// 並行投影行列の計算
 	XMMATRIX matProjection= XMMatrixOrthographicOffCenterLH(
@@ -457,10 +456,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	);
 
 	constMapTransform->mat = matProjection;
+	*/
 
+	//ビュー変換行列
+	XMMATRIX matView;
+	XMFLOAT3A eye(0, 0, -100);  //視点
+	XMFLOAT3A target(0, 0, 0);  //注視点
+	XMFLOAT3A up(0, 1, 0);		//上方向ベクトル
+	float cameraRange = -100;	//カメラの距離
+	float angle = 0;			//カメラの角度
+
+	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 
 	// 透視投影行列の変換
-	constMapTransform->mat = XMMatrixPerspectiveFovLH(
+
+	XMMATRIX matProject = XMMatrixPerspectiveFovLH(
 		XMConvertToRadians(45.0f), // 上下画角45度
 		(float)win_W / win_H,         // アスペクト比（画面横幅 / 画面縦幅）
 		0.1f, 1000.0f              //  前端、奥端
@@ -468,12 +478,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-
+	constMapTransform->mat = matView * matProject;
 
 	// 値を書き込むと自動的に転送される
 	constMapMaterial->color = XMFLOAT4(1, 0, 0, 0.5f);              // RGBAで半透明の赤
-	constMapMaterial->graColor = XMFLOAT4(1, 0, 1, 1.0f);              // RGBAで半透明の赤
-
+	constMapMaterial->graColor = XMFLOAT4(1, 1, 1, 1.0f);           //
 
 	TexMetadata metadata{};
 	ScratchImage scratchImg{};
@@ -576,7 +585,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	device->CreateShaderResourceView(texBuff, &srvDesc, srvHandle);
 
 
-#pragma	endregion
 
 	// 頂点シェーダの読み込みとコンパイル
 	result = D3DCompileFromFile(
@@ -819,6 +827,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		commandList->ClearRenderTargetView(rtvHandle, clearColo, 0, nullptr);
 
+
+
 		//4.グラフィックスコマンドここから------------
 
 		// ビューポート設定コマンド
@@ -881,6 +891,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//constMapMaterial->color.z -= num / 2;
 		//constMapMaterial->color.y -= num / 2;
 
+
+		if (key[DIK_D] || key[DIK_A]) {
+			if (key[DIK_D])angle += XMConvertToRadians(1.0f);
+			else if (key[DIK_A])angle -= XMConvertToRadians(1.0f);
+
+			eye.x = cameraRange * sinf(angle);
+			eye.z = cameraRange * cosf(angle);
+
+			matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
+		}
+
+
+		constMapTransform->mat = matView * matProject;
 
 		//4.グラフィックスコマンドここまで
 
