@@ -377,6 +377,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	};
 
 
+
 	// ヒープ設定
 	D3D12_HEAP_PROPERTIES cbHeapProp{};
 	cbHeapProp.Type = D3D12_HEAP_TYPE_UPLOAD;                   // GPUへの転送用
@@ -409,6 +410,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	ID3D12Resource* constBuffTransform = nullptr;
 	ConstBufferDataTransform* constMapTransform = nullptr;
+
+
+
+
+
 
 	{
 		// ヒープ設定
@@ -456,19 +462,47 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	);
 
 	constMapTransform->mat = matProjection;
+
 	*/
+
+
+
+
+	XMFLOAT3 scale;
+	XMFLOAT3 rotation;
+	XMFLOAT3 position;
+
+
+	scale = { 1.0f, 1.0f, 1.0f };
+	rotation = { 0.0f, 0.0f, 0.0f };
+	position = { 0.0f, 0.0f, 0.0f };
+
+
+
+	XMMATRIX matWorld;
+
+	XMMATRIX matScaling;
+	XMMATRIX matRot;
+	XMMATRIX matTrans;
+
+	//= XMMatrixTranslation(50.0f, 0, 0)
+
+
+	//matWorld *= matScaling * matRot * matTrans;
+
+
 
 	//ビュー変換行列
 	XMMATRIX matView;
-	XMFLOAT3A eye(0, 0, -100);  //視点
-	XMFLOAT3A target(0, 0, 0);  //注視点
-	XMFLOAT3A up(0, 1, 0);		//上方向ベクトル
+	XMFLOAT3 eye(0, 0, -100);  //視点
+	XMFLOAT3 target(0, 0, 0);  //注視点
+	XMFLOAT3 up(0, 1, 0);		//上方向ベクトル
 	float cameraRange = -100;	//カメラの距離
 	float angle = 0;			//カメラの角度
 
 	matView = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
 
-	// 透視投影行列の変換
+	// 透視投影行列(射影変換)の変換
 
 	XMMATRIX matProject = XMMatrixPerspectiveFovLH(
 		XMConvertToRadians(45.0f), // 上下画角45度
@@ -476,9 +510,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		0.1f, 1000.0f              //  前端、奥端
 	);
 
+	//constMapTransform->mat = matWorld * matView * matProject;
 
 
-	constMapTransform->mat = matView * matProject;
+
 
 	// 値を書き込むと自動的に転送される
 	constMapMaterial->color = XMFLOAT4(1, 0, 0, 0.5f);              // RGBAで半透明の赤
@@ -892,6 +927,32 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//constMapMaterial->color.y -= num / 2;
 
 
+
+		if (key[DIK_UP] || key[DIK_DOWN] || key[DIK_RIGHT] || key[DIK_LEFT]) {
+			// 座標を移動する処理（Z座標）
+			if (key[DIK_UP]) { position.z += 1.0f; }
+			else if (key[DIK_DOWN]) { position.z -= 1.0f; }
+			if (key[DIK_RIGHT]) { position.x += 1.0f; }
+			else if (key[DIK_LEFT]) { position.x -= 1.0f; }
+		}
+
+
+
+		//		XMMATRIX matTrans; // 平行移動行列
+
+		matWorld = XMMatrixIdentity();
+		matScaling = XMMatrixScaling(scale.x, scale.y, scale.z);
+		matRot = XMMatrixIdentity();
+		matRot *= XMMatrixRotationZ(rotation.z);
+		matRot *= XMMatrixRotationX(rotation.x);
+		matRot *= XMMatrixRotationY(rotation.y);
+		matTrans = XMMatrixTranslation(position.x, position.y, position.z);
+
+		matWorld *= matScaling * matRot * matTrans;// ワールド行列に平行移動を反映
+
+
+
+
 		if (key[DIK_D] || key[DIK_A]) {
 			if (key[DIK_D])angle += XMConvertToRadians(1.0f);
 			else if (key[DIK_A])angle -= XMConvertToRadians(1.0f);
@@ -903,7 +964,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 
-		constMapTransform->mat = matView * matProject;
+		// 定数バッファに転送
+		constMapTransform->mat = matWorld * matView * matProject;
 
 		//4.グラフィックスコマンドここまで
 
