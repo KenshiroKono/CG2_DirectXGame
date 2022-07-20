@@ -226,28 +226,81 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	  //描画初期化処理ここから
 #pragma region DrawInitialize
 
-//	画像イメージデータの作成---
+	// リソース設定
+	D3D12_RESOURCE_DESC depthResourceDesc{};
+	depthResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	depthResourceDesc.Width = win_W; //レンダーターゲットに合わせる
+	depthResourceDesc.Height = win_H; //レンダーターゲットに合わせる
+	depthResourceDesc.DepthOrArraySize = 1;
+	depthResourceDesc.Format = DXGI_FORMAT_D32_FLOAT;//深度値フォーット
+	depthResourceDesc.SampleDesc.Count = 1;
+	depthResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;//デプスステンシル
 
-	/*
-// 横方向ピクセル数
-	const size_t textureWidth = 256;
-	// 縦方向ピクセル数
-	const size_t textureHeight = 256;
-	// 配列の要素数
-	const size_t imageDataCount = textureWidth * textureHeight;
-	// 画像イメージデータ配列
-	XMFLOAT4* imageData = new XMFLOAT4[imageDataCount]; // ※必ず後で解放する
+	//深度値用ヒーププロパティ
+	D3D12_HEAP_PROPERTIES depthHeapProp{};
+	depthHeapProp.Type = D3D12_HEAP_TYPE_DEFAULT;
+	//深度値のクリア設定
+	D3D12_CLEAR_VALUE   depthClearValue{};
+	depthClearValue.DepthStencil.Depth = 1.0f;
+	depthClearValue.Format = DXGI_FORMAT_D32_FLOAT;
 
-	// 全ピクセルの色を初期化
-	for (size_t i = 0; i < imageDataCount; i++) {
-		imageData[i].x = 1.0f;    // R
-		imageData[i].y = 0.0f;    // G
-		imageData[i].z = 0.0f;    // B
-		imageData[i].w = 1.0f;    // A
-	}
-	*/
+	//リソース生成
+	ID3D12Resource* depthBuff = nullptr;
+	result = device->CreateCommittedResource(
+		&depthHeapProp,
+		D3D12_HEAP_FLAG_NONE,
+		&depthResourceDesc,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,//深度書き込みに使用
+		&depthClearValue,
+		IID_PPV_ARGS(&depthBuff)
+	);
 
-	// 頂点データ構造体
+	//深度ビュー 一用デスクリプタヒープ作成
+	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc{};
+	dsvHeapDesc.NumDescriptors = 1; // 深度ビュー ーは1つ
+	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;// デプスステンシルビュー
+	ID3D12DescriptorHeap* dsvHeap = nullptr;
+	result = device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvHeap));
+
+
+
+	//深度ビュー作成
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+	dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;//深度値フォーマット
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	device->CreateDepthStencilView(
+		depthBuff,
+		&dsvDesc,
+		dsvHeap->GetCPUDescriptorHandleForHeapStart()
+	);
+
+
+
+
+
+
+	//	画像イメージデータの作成---
+
+		/*
+	// 横方向ピクセル数
+		const size_t textureWidth = 256;
+		// 縦方向ピクセル数
+		const size_t textureHeight = 256;
+		// 配列の要素数
+		const size_t imageDataCount = textureWidth * textureHeight;
+		// 画像イメージデータ配列
+		XMFLOAT4* imageData = new XMFLOAT4[imageDataCount]; // ※必ず後で解放する
+
+		// 全ピクセルの色を初期化
+		for (size_t i = 0; i < imageDataCount; i++) {
+			imageData[i].x = 1.0f;    // R
+			imageData[i].y = 0.0f;    // G
+			imageData[i].z = 0.0f;    // B
+			imageData[i].w = 1.0f;    // A
+		}
+		*/
+
+		// 頂点データ構造体
 	struct Vertex {
 		XMFLOAT3 pos; // xyz座標
 		XMFLOAT2 uv;  // uv座標
@@ -255,19 +308,61 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 頂点データ
 	Vertex vertices[] = {
 		// x       y       z       u    v
-		{{-50.0f,-50.0f,0.0f}, {0.0f, 1.0f}}, // 左下
-		{{-50.0f, 50.0f,0.0f}, {0.0f, 0.0f}}, // 左上
-		{{ 50.0f,-50.0f,0.0f}, {1.0f, 1.0f}}, // 右下
-		{{ 50.0f, 50.0f,0.0f}, {1.0f, 0.0f}}, // 右上
+		//前
+		{{-5.0f,-5.0f,5.0f}, {0.0f, 1.0f}}, // 左下
+		{{-5.0f, 5.0f,5.0f}, {0.0f, 0.0f}}, // 左上
+		{{ 5.0f,-5.0f,5.0f}, {1.0f, 1.0f}}, // 右下
+		{{ 5.0f, 5.0f,5.0f}, {1.0f, 0.0f}}, // 右上
+		//後
+		{{-5.0f,-5.0f,-5.0f}, {0.0f, 1.0f}}, // 左下
+		{{-5.0f, 5.0f,-5.0f}, {0.0f, 0.0f}}, // 左上
+		{{ 5.0f,-5.0f,-5.0f}, {1.0f, 1.0f}}, // 右下
+		{{ 5.0f, 5.0f,-5.0f}, {1.0f, 0.0f}}, // 右上
+		//左
+		{{-5.0f,-5.0f,-5.0f}, {0.0f, 1.0f}}, // 奥下
+		{{-5.0f, 5.0f,-5.0f}, {0.0f, 0.0f}}, // 奥上
+		{{-5.0f,-5.0f, 5.0f}, {1.0f, 1.0f}}, // 前下
+		{{-5.0f, 5.0f, 5.0f}, {1.0f, 0.0f}}, // 前上
+		//右
+		{{5.0f,-5.0f,-5.0f}, {0.0f, 1.0f}}, // 奥下
+		{{5.0f, 5.0f,-5.0f}, {0.0f, 0.0f}}, // 奥上
+		{{5.0f,-5.0f, 5.0f}, {1.0f, 1.0f}}, // 前下
+		{{5.0f, 5.0f, 5.0f}, {1.0f, 0.0f}}, // 前上
+		//上
+		{{-5.0f, 5.0f,-5.0f}, {0.0f, 1.0f}}, // 奥左
+		{{ 5.0f, 5.0f,-5.0f}, {0.0f, 0.0f}}, // 奥右
+		{{-5.0f, 5.0f, 5.0f}, {1.0f, 1.0f}}, // 前左
+		{{ 5.0f, 5.0f, 5.0f}, {1.0f, 0.0f}}, // 前右
+		//下
+		{{-5.0f,-5.0f,-5.0f}, {0.0f, 1.0f}}, // 奥左
+		{{ 5.0f,-5.0f,-5.0f}, {0.0f, 0.0f}}, // 奥右
+		{{-5.0f,-5.0f, 5.0f}, {1.0f, 1.0f}}, // 前左
+		{{ 5.0f,-5.0f, 5.0f}, {1.0f, 0.0f}}, // 前右
+
 	};
-
-
 
 
 	// インデックスデータ
 	unsigned short indices[] = {
 		0, 1, 2, // 三角形1つ目
 		1, 2, 3, // 三角形2つ目
+
+		4,5,6,
+		5,6,7,
+
+		8,9,10,
+		9,10,11,
+
+		12,13,14,
+		13,14,15,
+
+		16,17,18,
+		17,18,19,
+
+		20,21,22,
+		21,22,23
+		/*
+				*/
 	};
 
 
@@ -523,7 +618,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ScratchImage scratchImg{};
 	// WICテクスチャのロード
 	result = LoadFromWICFile(
-		L"GraResource/eda.png",
+		L"GraResource/uvChecker.png",
 		WIC_FLAGS_NONE,
 		&metadata, scratchImg);
 
@@ -673,6 +768,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	},
 
 	};
+
 	// グラフィックスパイプライン設定
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineDesc{};
 
@@ -687,6 +783,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	pipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE; // カリングしない
 	pipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID; // ポリゴン内塗りつぶし
 	pipelineDesc.RasterizerState.DepthClipEnable = true; // 深度クリッピングを有効に
+	//デプスステンシルアートの設定
+	pipelineDesc.DepthStencilState.DepthEnable = true;
+	pipelineDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	pipelineDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	pipelineDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+
 
 
 	// ブレンドステート
@@ -849,7 +951,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//レンダーターゲットビューのハンドルを取得
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
 		rtvHandle.ptr += bbIndex * device->GetDescriptorHandleIncrementSize(rtvHeapDesc.Type);
-		commandList->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvHeap->GetCPUDescriptorHandleForHeapStart();
+		commandList->OMSetRenderTargets(1, &rtvHandle, false, &dsvHandle);
 
 
 
@@ -861,6 +964,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			clearColo[1] = 1.0f;
 		}
 		commandList->ClearRenderTargetView(rtvHandle, clearColo, 0, nullptr);
+		commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 
 
