@@ -344,23 +344,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// インデックスデータ
 	unsigned short indices[] = {
-		0, 1, 2, // 三角形1つ目
+		//0, 1, 2, // 三角形1つ目
 		1, 2, 3, // 三角形2つ目
 
 		4,5,6,
-		5,6,7,
+		//5,6,7,
 
-		8,9,10,
+		//8,9,10,
 		9,10,11,
 
 		12,13,14,
-		13,14,15,
+		//13,14,15,
 
-		16,17,18,
+		//16,17,18,
 		17,18,19,
 
 		20,21,22,
-		21,22,23
+		//21,22,23
 		/*
 				*/
 	};
@@ -1020,16 +1020,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0); // 全ての頂点を使って描画
 
 
-		//if (constMapMaterial->color.x >= 1) {
-		//	num *= -1;
-		//}
-		//else if (constMapMaterial->color.x <= 0) {
-		//	num *= -1;
-		//}
-		//constMapMaterial->color.x += num / 2;
-		//constMapMaterial->color.z -= num / 2;
-		//constMapMaterial->color.y -= num / 2;
-
+		if (constMapMaterial->color.z<=0 ) {
+			constMapMaterial->color.z = 1;
+		}
+		else {
+			constMapMaterial->color.z -= 0.001;
+		}
+		
 
 
 		if (key[DIK_UP] || key[DIK_DOWN] || key[DIK_RIGHT] || key[DIK_LEFT]) {
